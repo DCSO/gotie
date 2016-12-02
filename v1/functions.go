@@ -34,25 +34,15 @@ var (
 	client      = http.Client{}
 )
 
-// GetIOCs allows queries for TIE IOC objects with "query" beeing a case
-// insensitive string to search for.
-func GetIOCs(query string, dataType string, extraArgs string) (*IOCQueryStruct, error) {
-	var uri string
-	var offset int
-	var msg apiMessage
+func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 	var outData IOCQueryStruct
-	data := IOCQueryStruct{HasMore: true}
-
-	// The TIE API uses a paging mechanism to return all matched IOCs. So we have
-	//  to loop until the API tells us to stop.
+	var msg apiMessage
+	var offset int
+	// The TIE API uses a paging mechanism to return all matched IOCs.
+	// So we have to loop until the API tells us to stop.
 	for data.HasMore == true {
-		uri = apiURL +
-			"iocs?data_type=" + strings.ToLower(dataType) +
-			"&ivalue=" + query +
-			"&limit=" + strconv.Itoa(IOCLimit) +
-			"&offset=" + strconv.Itoa(offset) +
-			"&date_format=rfc3339" +
-			extraArgs
+
+		uri := baseuri + "&offset=" + strconv.Itoa(offset)
 
 		if Debug {
 			fmt.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
@@ -60,14 +50,17 @@ func GetIOCs(query string, dataType string, extraArgs string) (*IOCQueryStruct, 
 
 		req, err := http.NewRequest("GET", uri, nil)
 		if err != nil {
-			return &outData, err
+			outchan <- IOCResult{IOC: nil, Error: &err}
+			break
 		}
 		req.Header.Add("Accept", "application/json")
 		req.Header.Add("Authorization", "Bearer "+AuthToken)
 
 		resp, err := client.Do(req)
 		if err != nil {
-			return &outData, err
+			outchan <- IOCResult{IOC: nil, Error: &err}
+			close(outchan)
+			return
 		}
 		defer resp.Body.Close()
 
@@ -79,26 +72,93 @@ func GetIOCs(query string, dataType string, extraArgs string) (*IOCQueryStruct, 
 		if resp.StatusCode != 200 {
 			err = json.NewDecoder(resp.Body).Decode(&msg)
 			if err != nil {
-				return &outData, err
+				outchan <- IOCResult{IOC: nil, Error: &err}
+				close(outchan)
+				return
 			}
 			errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
-			return &outData, errors.New(errStr)
+			this_err := errors.New(errStr)
+			outchan <- IOCResult{IOC:nil, Error: &this_err}
+			close(outchan)
+			return
 		}
 
 		err = json.NewDecoder(resp.Body).Decode(&data)
 		if err != nil {
-			return &outData, err
+			outchan <- IOCResult{IOC: nil, Error: &err}
+			close(outchan)
+			return
 		}
 		_, err = json.Marshal(data.Iocs)
 		if err != nil {
-			return &outData, err
+			outchan <- IOCResult{IOC: nil, Error: &err}
+			close(outchan)
+			return
 		}
-		outData.Iocs = append(outData.Iocs, data.Iocs...)
+		for _, ioc := range data.Iocs {
+			outchan <- IOCResult{IOC: &ioc, Error: nil}
+		}
 		outData.Params = data.Params
 		outData.HasMore = data.HasMore
 		offset += IOCLimit
 	}
+	close(outchan)
+}
+
+func GetIOCChan(query string, dataType string, extraArgs string) (<-chan IOCResult) {
+	data := IOCQueryStruct{HasMore: true}
+	outchan := make(chan IOCResult)
+
+    uri := apiURL +
+			"iocs?data_type=" + strings.ToLower(dataType) +
+			"&ivalue=" + query +
+			"&limit=" + strconv.Itoa(IOCLimit) +
+			"&date_format=rfc3339" +
+			extraArgs
+
+	go IOCQuery(uri, outchan, data)
+
+	return outchan
+}
+
+func GetIOCPeriodFeedChan(feedPeriod string, dataType string, extraArgs string) (<-chan IOCResult) {
+	data := IOCQueryStruct{HasMore: true}
+	outchan := make(chan IOCResult)
+
+    uri := apiURL +
+			"iocs/feed/"+ feedPeriod + "?data_type=" + strings.ToLower(dataType) +
+			"&limit=" + strconv.Itoa(IOCLimit) +
+			"&date_format=rfc3339" +
+			extraArgs
+
+	go IOCQuery(uri, outchan, data)
+
+	return outchan
+}
+
+func IOCChanCollect(inchan <-chan IOCResult) (*IOCQueryStruct, error) {
+	var outData IOCQueryStruct
+
+	for ioc := range inchan {
+		if ioc.Error != nil {
+			return &outData, *(ioc.Error)
+		}
+		outData.Iocs = append(outData.Iocs, *(ioc.IOC))
+	}
+
 	return &outData, nil
+}
+
+// GetIOCs allows queries for TIE IOC objects with "query" being a case
+// insensitive string to search for.
+func GetIOCs(query string, dataType string, extraArgs string) (*IOCQueryStruct, error) {
+	return IOCChanCollect(GetIOCChan(query, dataType, extraArgs))
+}
+
+// GetIOCPeriodFeeds gets file based feeds for the given period and IOC data type.
+// Feed types are, for example, 'hourly', 'daily', 'weekly' or 'monthly'.
+func GetIOCPeriodFeeds(feedPeriod string, dataType string, extraArgs string) (*IOCQueryStruct, error) {
+	return IOCChanCollect(GetIOCPeriodFeedChan(feedPeriod, dataType, extraArgs))
 }
 
 // PrintIOCs allows queries for TIE IOC objects with "query" beeing a case
@@ -176,7 +236,7 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 
 // GetPeriodFeeds gets file based feeds for the given period and IOC data type.
 // Valid outputFormats are: "csv" (default), "json" and "stix" and print to stdout
-func GetPeriodFeeds(feedPeriod string, dataType string, outputFormat string) error {
+func PrintPeriodFeeds(feedPeriod string, dataType string, outputFormat string) error {
 	var msg apiMessage
 
 	req, err := http.NewRequest("GET",

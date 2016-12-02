@@ -75,7 +75,7 @@ func main() {
 		if options.Feed.Format == "" {
 			options.Feed.Format = "csv"
 		}
-		err = gotie.GetPeriodFeeds(options.Feed.Period,
+		err = gotie.PrintPeriodFeeds(options.Feed.Period,
 			strings.ToLower(options.Feed.DataType), options.Feed.Format)
 		if err != nil {
 			log.Fatal(err)
