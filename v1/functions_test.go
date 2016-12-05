@@ -4,7 +4,9 @@ package gotie
 // Copyright (c) 2016, DCSO GmbH
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -31,6 +33,40 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
+	iocchan := GetIOCChan("google", "IPv4", "")
+	if iocchan == nil {
+		t.Logf("ERROR: no channel created")
+		t.FailNow()
+	}
+	_, err = IOCChanCollect(iocchan)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+
+	feedchan := GetIOCPeriodFeedChan("daily", "DomainName", "")
+	if feedchan == nil {
+		t.Logf("ERROR: no channel created")
+		t.FailNow()
+	}
+	_, err = IOCChanCollect(feedchan)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+
+    feedchan = GetIOCPeriodFeedChan("foobar", "DomainName", "")
+    _, err = IOCChanCollect(feedchan)
+	if err == nil {
+		t.Logf("ERROR: expected failure for invalid keyword", err)
+		t.FailNow()
+	} else {
+		if !strings.Contains(fmt.Sprintf("%s", err), "invalid period") {
+			t.Logf("ERROR: expected invalid period error message", err)
+			t.FailNow()
+		}
+	}
+
 	err = PrintIOCs("google", "domainname", "&first_seen_since=2015-1-1", "csv")
 	if err != nil {
 		t.Logf("ERROR: %v", err)
@@ -49,7 +85,7 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = GetPeriodFeeds("daily", "DomainName", "csv")
+	err = PrintPeriodFeeds("daily", "DomainName", "csv")
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
