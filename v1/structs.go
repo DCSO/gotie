@@ -44,6 +44,11 @@ type IOC struct {
 	ObservationAttributes []string   `json:"observation_attributes"`
 }
 
+type IOCResult struct {
+	IOC      *IOC
+	Error    *error
+}
+
 // IOCParams contains all necessary query parameters
 type IOCParams struct {
 	NoDefaults       bool       `json:"no_defaults"`
