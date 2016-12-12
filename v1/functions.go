@@ -136,6 +136,27 @@ func GetIOCPeriodFeedChan(feedPeriod string, dataType string, extraArgs string) 
 	return outchan
 }
 
+func GetIOCJSONInChan(reader io.Reader) (<-chan IOCResult, error) {
+	var iocs struct {
+		IOCs []IOC
+	}
+	outchan := make(chan IOCResult)
+
+	err := json.NewDecoder(reader).Decode(&iocs)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for i, _ := range iocs.IOCs  {
+			outchan <- IOCResult{IOC: &iocs.IOCs[i], Error: nil}
+		}
+		close(outchan)
+	}()
+
+	return outchan, nil
+}
+
 func IOCChanCollect(inchan <-chan IOCResult) (*IOCQueryStruct, error) {
 	var outData IOCQueryStruct
 
