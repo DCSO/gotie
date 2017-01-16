@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/peterhellberg/link"
+	"github.com/tent/http-link-go"
 )
 
 var (
@@ -245,8 +245,20 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 		// Due to the various output types we can not marshal and check the HasMore
 		// header here. Fortunately TIE also returns a Link header for pagination.
 		// Ref: https://tie.dcso.de/api-docs/api/v1/pagination.html
-		group := link.ParseResponse(resp)
-		if group["next"] == nil {
+		var links []link.Link
+		found_next := false
+		if resp.Header.Get("Link") != "" {
+			links, err = link.Parse(resp.Header.Get("Link"))
+			if err != nil {
+				return err
+			}
+			for _, l := range links {
+				if l.Rel == "next" {
+					found_next = true
+				}
+			}
+		}
+		if !found_next {
 			break
 		}
 
