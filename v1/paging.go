@@ -5,12 +5,8 @@ package gotie
 
 import (
 	"encoding/json"
-//	"encoding/xml"
-//	"errors"
-//	"fmt"
 	"io"
 	"bytes"
-//	"regexp"
 )
 
 type PageContentAggregator interface {
