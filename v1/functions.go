@@ -257,11 +257,14 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 
 // GetPeriodFeeds gets file based feeds for the given period and IOC data type.
 // Valid outputFormats are: "csv" (default), "json" and "stix" and print to stdout
-func PrintPeriodFeeds(feedPeriod string, dataType string, outputFormat string) error {
+func PrintPeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string) error {
 	var msg apiMessage
 
 	req, err := http.NewRequest("GET",
-		apiURL+"iocs/feed/"+feedPeriod+"/"+strings.ToLower(dataType)+"?limit="+strconv.Itoa(IOCLimit),
+		apiURL + "iocs/feed/"+feedPeriod+"/"+strings.ToLower(dataType) +
+		         "?limit=" + strconv.Itoa(IOCLimit) +
+		         "&date_format=rfc3339" +
+		         extraArgs,
 		nil)
 	if err != nil {
 		return err

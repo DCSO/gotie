@@ -85,7 +85,7 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = PrintPeriodFeeds("daily", "DomainName", "csv")
+	err = PrintPeriodFeeds("daily", "DomainName", "", "csv")
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
