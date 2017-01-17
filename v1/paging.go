@@ -68,6 +68,8 @@ func (pa *JSONPageAggregator) Finish(writer io.Writer) error {
 	tlr.Params = pa.Params
 	tlr.IOCs = pa.IOCs
 	tlr.has_more = false
+	tlr.Params.Offset = 0
+	tlr.Params.Limit = len(tlr.IOCs)
 
 	err := json.NewEncoder(writer).Encode(&tlr)
 	return err
