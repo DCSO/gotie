@@ -217,7 +217,7 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 		case "stix":
 			req.Header.Add("Accept", "text/xml")
 		default:
-			return errors.New("Not supported output format requested: " + outputFormat)
+			return errors.New("Unsupported output format requested: " + outputFormat)
 		}
 
 		req.Header.Add("Authorization", "Bearer "+AuthToken)
@@ -278,7 +278,7 @@ func PrintPeriodFeeds(feedPeriod string, dataType string, extraArgs string, outp
 	case "stix":
 		req.Header.Add("Accept", "text/xml")
 	default:
-		return errors.New("Not supported output format requested: " + outputFormat)
+		return errors.New("Unsupported output format requested: " + outputFormat)
 	}
 
 	req.Header.Add("Authorization", "Bearer "+AuthToken)
