@@ -186,8 +186,24 @@ func GetIOCPeriodFeeds(feedPeriod string, dataType string, extraArgs string) (*I
 // insensitive string to search for. The results are printed to stdout.
 func PrintIOCs(query string, dataType string, extraArgs string, outputFormat string) error {
 	var uri string
+	var acceptHdr string
 	var offset int
 	var msg apiMessage
+	var agg PageContentAggregator
+
+	switch outputFormat {
+		case "csv":
+			acceptHdr = "text/csv"
+			agg = &PaginatedRawPageAggregator{}
+		case "json":
+			acceptHdr = "application/json"
+			agg = &JSONPageAggregator{}
+		case "stix":
+			acceptHdr = "text/xml"
+			agg = &PaginatedRawPageAggregator{}
+		default:
+			return errors.New("Unsupported output format requested: " + outputFormat)
+	}
 
 	// The TIE API uses a paging mechanism to return all matched IOCs. So we have
 	//  to loop until the API tells us to stop.
@@ -209,17 +225,7 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 			return err
 		}
 
-		switch outputFormat {
-		case "csv":
-			req.Header.Add("Accept", "text/csv")
-		case "json":
-			req.Header.Add("Accept", "application/json")
-		case "stix":
-			req.Header.Add("Accept", "text/xml")
-		default:
-			return errors.New("Unsupported output format requested: " + outputFormat)
-		}
-
+		req.Header.Add("Accept", acceptHdr)
 		req.Header.Add("Authorization", "Bearer "+AuthToken)
 
 		resp, err := client.Do(req)
@@ -237,7 +243,7 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 			return errors.New(errStr)
 		}
 
-		_, err = io.Copy(os.Stdout, resp.Body)
+		err = agg.AddPage(resp.Body)
 		if err != nil {
 			return err
 		}
@@ -264,6 +270,8 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 
 		offset += IOCLimit
 	}
+
+	agg.Finish(os.Stdout)
 	return nil
 }
 
