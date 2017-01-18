@@ -5,6 +5,7 @@ package gotie
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -67,28 +68,102 @@ func TestGetIocs(t *testing.T) {
 		}
 	}
 
-	err = PrintIOCs("google", "domainname", "&first_seen_since=2015-1-1", "csv")
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "csv", ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
-	err = PrintIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json")
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
-	err = PrintIOCs("google", "domainname", "&first_seen_since=2015-1-1", "stix")
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "stix", ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
-	err = PrintPeriodFeeds("daily", "DomainName", "", "csv")
+	err = WritePeriodFeeds("daily", "DomainName", "", "csv", ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
+}
+
+func TestWriteIocs(t *testing.T) {
+	var info os.FileInfo
+	var err error
+
+	tmpfile, err := ioutil.TempFile("", "gotie-iocs")
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	defer os.Remove(tmpfile.Name())
+
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", tmpfile)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+
+	info, err = tmpfile.Stat()
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	if info.Size() == 0 {
+		t.Logf("ERROR: JSON file %s is empty but should contain IOC data", tmpfile.Name())
+		t.FailNow()
+	}
+}
+
+func TestReadWriteIocsJSON(t *testing.T) {
+	var err error
+	var readfile *os.File
+	var jsonchan <-chan IOCResult
+	var res *IOCQueryStruct
+
+	tmpfile, err := ioutil.TempFile("", "gotie-iocs")
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	defer os.Remove(tmpfile.Name())
+
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", tmpfile)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+
+	readfile, err = os.Open(tmpfile.Name())
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	defer readfile.Close()
+
+	jsonchan, err = GetIOCJSONInChan(readfile)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	res, err = IOCChanCollect(jsonchan)
+	if err != nil {
+		t.Logf("ERROR: %v", err)
+		t.FailNow()
+	}
+	if len(res.Iocs) == 0 {
+		t.Logf("ERROR: JSON input channel yielded no results")
+		t.FailNow()
+	}
 }
