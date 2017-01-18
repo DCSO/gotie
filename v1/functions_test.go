@@ -124,7 +124,6 @@ func TestWriteIocs(t *testing.T) {
 
 func TestReadWriteIocsJSON(t *testing.T) {
 	var err error
-	var readfile *os.File
 	var jsonchan <-chan IOCResult
 	var res *IOCQueryStruct
 
@@ -140,19 +139,13 @@ func TestReadWriteIocsJSON(t *testing.T) {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
-	if err := tmpfile.Close(); err != nil {
+	tmpfile.Sync()
+	_, err = tmpfile.Seek(0, 0)
+	if  err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
-
-	readfile, err = os.Open(tmpfile.Name())
-	if err != nil {
-		t.Logf("ERROR: %v", err)
-		t.FailNow()
-	}
-	defer readfile.Close()
-
-	jsonchan, err = GetIOCJSONInChan(readfile)
+	jsonchan, err = GetIOCJSONInChan(tmpfile)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
