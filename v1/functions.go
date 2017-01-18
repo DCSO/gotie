@@ -182,9 +182,7 @@ func GetIOCPeriodFeeds(feedPeriod string, dataType string, extraArgs string) (*I
 	return IOCChanCollect(GetIOCPeriodFeedChan(feedPeriod, dataType, extraArgs))
 }
 
-// PrintIOCs allows queries for TIE IOC objects with "query" beeing a case
-// insensitive string to search for. The results are printed to stdout.
-func PrintIOCs(query string, dataType string, extraArgs string, outputFormat string) error {
+func WriteIOCs(query string, dataType string, extraArgs string, outputFormat string, dest io.Writer) error {
 	var uri string
 	var acceptHdr string
 	var offset int
@@ -271,13 +269,11 @@ func PrintIOCs(query string, dataType string, extraArgs string, outputFormat str
 		offset += IOCLimit
 	}
 
-	agg.Finish(os.Stdout)
+	agg.Finish(dest)
 	return nil
 }
 
-// GetPeriodFeeds gets file based feeds for the given period and IOC data type.
-// Valid outputFormats are: "csv" (default), "json" and "stix" and print to stdout
-func PrintPeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string) error {
+func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string, dest io.Writer) error {
 	var msg apiMessage
 
 	req, err := http.NewRequest("GET",
@@ -324,12 +320,24 @@ func PrintPeriodFeeds(feedPeriod string, dataType string, extraArgs string, outp
 		return errors.New(errStr)
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
+	_, err = io.Copy(dest, resp.Body)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// PrintIOCs allows queries for TIE IOC objects with "query" being a case
+// insensitive string to search for. The results are printed to stdout.
+func PrintIOCs(query string, dataType string, extraArgs string, outputFormat string) error {
+	return WriteIOCs(query, dataType, extraArgs, outputFormat, os.Stdout)
+}
+
+// PrintPeriodFeeds gets file based feeds for the given period and IOC data type.
+// Valid outputFormats are: "csv" (default), "json" and "stix". Results are printed to stdout.
+func PrintPeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string) error {
+	return WritePeriodFeeds(feedPeriod, dataType, extraArgs, outputFormat, os.Stdout)
 }
 
 // PingBackCall allows to tell the TIE about observed hits for IOCs
