@@ -5,12 +5,12 @@ package main
 
 import (
 	"log"
+	"net/url"
 	"os"
-	"regexp"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
-	"net/url"
 
 	"github.com/voxelbrain/goptions"
 
@@ -18,35 +18,35 @@ import (
 )
 
 type IOCSParams struct {
-	Query             string `goptions:"-q,--query, description='Query string (case insensitive)', obligatory"`
-	Format            string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
-	DataType          string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
-	Severity          string `goptions:"--severity, description='Specify severity (can be a range)'"`
-	Confidence        string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
-	Updated_since     string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
-	Updated_until     string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
-	Created_since     string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
-	Created_until     string `goptions:"--created-until, description='Limit to IOCs created until the given date'"`
-	First_seen_since  string `goptions:"--first-seen-since, description='Limit to IOCs first seen since the given date'"`
-	First_seen_until  string `goptions:"--first-seen-until, description='Limit to IOCs first seen until the given date'"`
-	Last_seen_since   string `goptions:"--last-seen-since, description='Limit to IOCs last seen since the given date'"`
-	Last_seen_until   string `goptions:"--last-seen-until, description='Limit to IOCs last seen until the given date'"`
+	Query            string `goptions:"-q,--query, description='Query string (case insensitive)', obligatory"`
+	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
+	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
+	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
+	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
+	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
+	Created_until    string `goptions:"--created-until, description='Limit to IOCs created until the given date'"`
+	First_seen_since string `goptions:"--first-seen-since, description='Limit to IOCs first seen since the given date'"`
+	First_seen_until string `goptions:"--first-seen-until, description='Limit to IOCs first seen until the given date'"`
+	Last_seen_since  string `goptions:"--last-seen-since, description='Limit to IOCs last seen since the given date'"`
+	Last_seen_until  string `goptions:"--last-seen-until, description='Limit to IOCs last seen until the given date'"`
 }
 
 type FeedParams struct {
-	Period   string `goptions:"-p,--period, description='Get TIE feed for given period (hourly|daily|weekly|monthly)', obligatory"`
-	Format   string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
-	DataType string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
-	Severity          string `goptions:"--severity, description='Specify severity (can be a range)'"`
-	Confidence        string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
-	Updated_since     string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
-	Updated_until     string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
-	Created_since     string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
-	Created_until     string `goptions:"--created-until, description='Limit to IOCs created until the given date'"`
-	First_seen_since  string `goptions:"--first-seen-since, description='Limit to IOCs first seen since the given date'"`
-	First_seen_until  string `goptions:"--first-seen-until, description='Limit to IOCs first seen until the given date'"`
-	Last_seen_since   string `goptions:"--last-seen-since, description='Limit to IOCs last seen since the given date'"`
-	Last_seen_until   string `goptions:"--last-seen-until, description='Limit to IOCs last seen until the given date'"`
+	Period           string `goptions:"-p,--period, description='Get TIE feed for given period (hourly|daily|weekly|monthly)', obligatory"`
+	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
+	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
+	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
+	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
+	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
+	Created_until    string `goptions:"--created-until, description='Limit to IOCs created until the given date'"`
+	First_seen_since string `goptions:"--first-seen-since, description='Limit to IOCs first seen since the given date'"`
+	First_seen_until string `goptions:"--first-seen-until, description='Limit to IOCs first seen until the given date'"`
+	Last_seen_since  string `goptions:"--last-seen-since, description='Limit to IOCs last seen since the given date'"`
+	Last_seen_until  string `goptions:"--last-seen-until, description='Limit to IOCs last seen until the given date'"`
 }
 
 type PingBackParams struct {
@@ -54,26 +54,26 @@ type PingBackParams struct {
 	Value    string `goptions:"-v,--value, description='Specify a valid TIE IOC data value', obligatory"`
 }
 
-type Params interface {}
+type Params interface{}
 
 func parseTime(timeString string) (time.Time, error) {
 	var mtime time.Time
 	var err error
 
 	formats := []string{"2006-01-02",
-						"2006-01-02 15:04",
-						"2006/01/02",
-						"2006/01/02 15:04",
-						time.ANSIC,
-						time.UnixDate,
-						time.RubyDate,
-						time.RFC822,
-						time.RFC822Z,
-						time.RFC850,
-						time.RFC1123,
-						time.RFC1123Z,
-						time.RFC3339,
-						time.RFC3339Nano}
+		"2006-01-02 15:04",
+		"2006/01/02",
+		"2006/01/02 15:04",
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano}
 
 	for _, format := range formats {
 		mtime, err = time.Parse(format, timeString)
@@ -86,25 +86,25 @@ func parseTime(timeString string) (time.Time, error) {
 }
 
 func buildArgs(params Params, typestr string) string {
-	sharedParams := map[string]bool {
-		"Severity":true,
-		"Confidence":true,
-		"Updated_since":true,
-		"Updated_until":true,
-		"Created_since":true,
-		"Created_until":true,
-		"First_seen_since":true,
-		"First_seen_until":true,
-		"Last_seen_since":true,
-		"Last_seen_until":true,
+	sharedParams := map[string]bool{
+		"Severity":         true,
+		"Confidence":       true,
+		"Updated_since":    true,
+		"Updated_until":    true,
+		"Created_since":    true,
+		"Created_until":    true,
+		"First_seen_since": true,
+		"First_seen_until": true,
+		"Last_seen_since":  true,
+		"Last_seen_until":  true,
 	}
 	var p reflect.Value
 
 	if typestr == "iocs" {
-		iocparams :=  params.(IOCSParams)
+		iocparams := params.(IOCSParams)
 		p = reflect.ValueOf(&iocparams).Elem()
 	} else if typestr == "feed" {
-		feedparams :=  params.(FeedParams)
+		feedparams := params.(FeedParams)
 		p = reflect.ValueOf(&feedparams).Elem()
 	}
 	values := []string{""}
@@ -123,7 +123,7 @@ func buildArgs(params Params, typestr string) string {
 				}
 				outval = timeval.Format("2006-01-02T15:04:05Z")
 			}
-			argPair := url.QueryEscape(strings.ToLower(field_name)) + "="+ url.QueryEscape(outval)
+			argPair := url.QueryEscape(strings.ToLower(field_name)) + "=" + url.QueryEscape(outval)
 			values = append(values, argPair)
 		}
 	}
@@ -146,7 +146,7 @@ func main() {
 	options := Options{
 		ConfPath: getDefaultConfPath(),
 		IOCS: IOCSParams{
-			Format: "csv",
+			Format:           "csv",
 			First_seen_since: "2015-01-01",
 		},
 		Feed: FeedParams{

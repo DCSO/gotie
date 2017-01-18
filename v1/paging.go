@@ -4,9 +4,9 @@ package gotie
 // Copyright (c) 2017, DCSO GmbH
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
-	"bytes"
 )
 
 type PageContentAggregator interface {
@@ -34,14 +34,14 @@ func (pa *PaginatedRawPageAggregator) Reset() {
 }
 
 type JSONTopLevelResponse struct {
-	Params   IOCParams       `json:"params"`
-	IOCs     []IOC           `json:"iocs"`
-	has_more bool            `json:"has_more"`
+	Params   IOCParams `json:"params"`
+	IOCs     []IOC     `json:"iocs"`
+	has_more bool      `json:"has_more"`
 }
 
 type JSONPageAggregator struct {
-	IOCs   []IOC             `json:"iocs"`
-	Params IOCParams         `json:"params"`
+	IOCs   []IOC     `json:"iocs"`
+	Params IOCParams `json:"params"`
 }
 
 func (pa *JSONPageAggregator) AddPage(reader io.Reader) error {

@@ -55,8 +55,8 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
-    feedchan = GetIOCPeriodFeedChan("foobar", "DomainName", "")
-    _, err = IOCChanCollect(feedchan)
+	feedchan = GetIOCPeriodFeedChan("foobar", "DomainName", "")
+	_, err = IOCChanCollect(feedchan)
 	if err == nil {
 		t.Logf("ERROR: expected failure for invalid keyword", err)
 		t.FailNow()

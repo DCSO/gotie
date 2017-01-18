@@ -78,7 +78,7 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 			}
 			errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
 			this_err := errors.New(errStr)
-			outchan <- IOCResult{IOC:nil, Error: &this_err}
+			outchan <- IOCResult{IOC: nil, Error: &this_err}
 			close(outchan)
 			return
 		}
@@ -105,31 +105,31 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 	close(outchan)
 }
 
-func GetIOCChan(query string, dataType string, extraArgs string) (<-chan IOCResult) {
+func GetIOCChan(query string, dataType string, extraArgs string) <-chan IOCResult {
 	data := IOCQueryStruct{HasMore: true}
 	outchan := make(chan IOCResult)
 
-    uri := apiURL +
-			"iocs?data_type=" + strings.ToLower(dataType) +
-			"&ivalue=" + query +
-			"&limit=" + strconv.Itoa(IOCLimit) +
-			"&date_format=rfc3339" +
-			extraArgs
+	uri := apiURL +
+		"iocs?data_type=" + strings.ToLower(dataType) +
+		"&ivalue=" + query +
+		"&limit=" + strconv.Itoa(IOCLimit) +
+		"&date_format=rfc3339" +
+		extraArgs
 
 	go IOCQuery(uri, outchan, data)
 
 	return outchan
 }
 
-func GetIOCPeriodFeedChan(feedPeriod string, dataType string, extraArgs string) (<-chan IOCResult) {
+func GetIOCPeriodFeedChan(feedPeriod string, dataType string, extraArgs string) <-chan IOCResult {
 	data := IOCQueryStruct{HasMore: true}
 	outchan := make(chan IOCResult)
 
-    uri := apiURL +
-			"iocs/feed/"+ feedPeriod + "?data_type=" + strings.ToLower(dataType) +
-			"&limit=" + strconv.Itoa(IOCLimit) +
-			"&date_format=rfc3339" +
-			extraArgs
+	uri := apiURL +
+		"iocs/feed/" + feedPeriod + "?data_type=" + strings.ToLower(dataType) +
+		"&limit=" + strconv.Itoa(IOCLimit) +
+		"&date_format=rfc3339" +
+		extraArgs
 
 	go IOCQuery(uri, outchan, data)
 
@@ -148,7 +148,7 @@ func GetIOCJSONInChan(reader io.Reader) (<-chan IOCResult, error) {
 	}
 
 	go func() {
-		for i, _ := range iocs.IOCs  {
+		for i, _ := range iocs.IOCs {
 			outchan <- IOCResult{IOC: &iocs.IOCs[i], Error: nil}
 		}
 		close(outchan)
@@ -190,17 +190,17 @@ func WriteIOCs(query string, dataType string, extraArgs string, outputFormat str
 	var agg PageContentAggregator
 
 	switch outputFormat {
-		case "csv":
-			acceptHdr = "text/csv"
-			agg = &PaginatedRawPageAggregator{}
-		case "json":
-			acceptHdr = "application/json"
-			agg = &JSONPageAggregator{}
-		case "stix":
-			acceptHdr = "text/xml"
-			agg = &PaginatedRawPageAggregator{}
-		default:
-			return errors.New("Unsupported output format requested: " + outputFormat)
+	case "csv":
+		acceptHdr = "text/csv"
+		agg = &PaginatedRawPageAggregator{}
+	case "json":
+		acceptHdr = "application/json"
+		agg = &JSONPageAggregator{}
+	case "stix":
+		acceptHdr = "text/xml"
+		agg = &PaginatedRawPageAggregator{}
+	default:
+		return errors.New("Unsupported output format requested: " + outputFormat)
 	}
 
 	// The TIE API uses a paging mechanism to return all matched IOCs. So we have
@@ -277,10 +277,10 @@ func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outp
 	var msg apiMessage
 
 	req, err := http.NewRequest("GET",
-		apiURL + "iocs/feed/"+feedPeriod+"/"+strings.ToLower(dataType) +
-		         "?limit=" + strconv.Itoa(IOCLimit) +
-		         "&date_format=rfc3339" +
-		         extraArgs,
+		apiURL+"iocs/feed/"+feedPeriod+"/"+strings.ToLower(dataType)+
+			"?limit="+strconv.Itoa(IOCLimit)+
+			"&date_format=rfc3339"+
+			extraArgs,
 		nil)
 	if err != nil {
 		return err
