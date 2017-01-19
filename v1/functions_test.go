@@ -59,11 +59,11 @@ func TestGetIocs(t *testing.T) {
 	feedchan = GetIOCPeriodFeedChan("foobar", "DomainName", "")
 	_, err = IOCChanCollect(feedchan)
 	if err == nil {
-		t.Logf("ERROR: expected failure for invalid keyword", err)
+		t.Log("ERROR: expected failure for invalid keyword", err)
 		t.FailNow()
 	} else {
 		if !strings.Contains(fmt.Sprintf("%s", err), "invalid period") {
-			t.Logf("ERROR: expected invalid period error message", err)
+			t.Log("ERROR: expected invalid period error message", err)
 			t.FailNow()
 		}
 	}

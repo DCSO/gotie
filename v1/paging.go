@@ -36,7 +36,7 @@ func (pa *PaginatedRawPageAggregator) Reset() {
 type JSONTopLevelResponse struct {
 	Params   IOCParams `json:"params"`
 	IOCs     []IOC     `json:"iocs"`
-	has_more bool      `json:"has_more"`
+	has_more bool
 }
 
 type JSONPageAggregator struct {
