@@ -46,7 +46,7 @@ type IOC struct {
 
 type IOCResult struct {
 	IOC   *IOC
-	Error *error
+	Error error
 }
 
 // IOCParams contains all necessary query parameters

@@ -50,7 +50,7 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 
 		req, err := http.NewRequest("GET", uri, nil)
 		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: &err}
+			outchan <- IOCResult{IOC: nil, Error: err}
 			break
 		}
 		req.Header.Add("Accept", "application/json")
@@ -58,7 +58,7 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: &err}
+			outchan <- IOCResult{IOC: nil, Error: err}
 			close(outchan)
 			return
 		}
@@ -72,26 +72,26 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 		if resp.StatusCode != 200 {
 			err = json.NewDecoder(resp.Body).Decode(&msg)
 			if err != nil {
-				outchan <- IOCResult{IOC: nil, Error: &err}
+				outchan <- IOCResult{IOC: nil, Error: err}
 				close(outchan)
 				return
 			}
 			errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
 			this_err := errors.New(errStr)
-			outchan <- IOCResult{IOC: nil, Error: &this_err}
+			outchan <- IOCResult{IOC: nil, Error: this_err}
 			close(outchan)
 			return
 		}
 
 		err = json.NewDecoder(resp.Body).Decode(&data)
 		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: &err}
+			outchan <- IOCResult{IOC: nil, Error: err}
 			close(outchan)
 			return
 		}
 		_, err = json.Marshal(data.Iocs)
 		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: &err}
+			outchan <- IOCResult{IOC: nil, Error: err}
 			close(outchan)
 			return
 		}
@@ -162,7 +162,7 @@ func IOCChanCollect(inchan <-chan IOCResult) (*IOCQueryStruct, error) {
 
 	for ioc := range inchan {
 		if ioc.Error != nil {
-			return &outData, *(ioc.Error)
+			return &outData, ioc.Error
 		}
 		outData.Iocs = append(outData.Iocs, *(ioc.IOC))
 	}
