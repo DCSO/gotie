@@ -20,6 +20,7 @@ import (
 type IOCSParams struct {
 	Query            string `goptions:"-q,--query, description='Query string (case insensitive)', obligatory"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
@@ -36,6 +37,7 @@ type IOCSParams struct {
 type FeedParams struct {
 	Period           string `goptions:"-p,--period, description='Get TIE feed for given period (hourly|daily|weekly|monthly)', obligatory"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
@@ -89,6 +91,7 @@ func buildArgs(params Params, typestr string) string {
 	sharedParams := map[string]bool{
 		"Severity":         true,
 		"Confidence":       true,
+		"Category":         true,
 		"Updated_since":    true,
 		"Updated_until":    true,
 		"Created_since":    true,
@@ -125,6 +128,8 @@ func buildArgs(params Params, typestr string) string {
 			}
 			argPair := url.QueryEscape(strings.ToLower(field_name)) + "=" + url.QueryEscape(outval)
 			values = append(values, argPair)
+		} else {
+			log.Printf("unknown or empty parameter %s skipped\n", field_name)
 		}
 	}
 	return strings.Join(values, "&")
@@ -174,6 +179,9 @@ func main() {
 	gotie.AuthToken = CONF.TieToken
 
 	if options.Verbs == "iocs" {
+		if gotie.Debug {
+			log.Println(buildArgs(options.IOCS, "iocs"))
+		}
 		err = gotie.PrintIOCs(options.IOCS.Query, options.IOCS.DataType,
 			buildArgs(options.IOCS, "iocs"), options.IOCS.Format)
 		if err != nil {
