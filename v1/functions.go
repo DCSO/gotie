@@ -95,8 +95,8 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 			close(outchan)
 			return
 		}
-		for _, ioc := range data.Iocs {
-			outchan <- IOCResult{IOC: &ioc, Error: nil}
+		for i := range data.Iocs {
+			outchan <- IOCResult{IOC: &data.Iocs[i], Error: nil}
 		}
 		outData.Params = data.Params
 		outData.HasMore = data.HasMore
