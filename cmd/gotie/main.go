@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ type IOCSParams struct {
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Limit            string `goptions:"--limit, description='Specify limit of IOCs to query at once'"`
 	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
 	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
 	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
@@ -41,6 +43,7 @@ type FeedParams struct {
 	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Limit            string `goptions:"--limit, description='Specify limit of IOCs to query at once'"`
 	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
 	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
 	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
@@ -153,9 +156,11 @@ func main() {
 		IOCS: IOCSParams{
 			Format:           "csv",
 			First_seen_since: "2015-01-01",
+			Limit:            "1000",
 		},
 		Feed: FeedParams{
 			Format: "csv",
+			Limit:  "1000",
 		},
 	}
 	goptions.ParseAndFail(&options)
@@ -179,6 +184,13 @@ func main() {
 	gotie.AuthToken = CONF.TieToken
 
 	if options.Verbs == "iocs" {
+		var s int64
+		s, err = strconv.ParseInt(options.IOCS.Limit, 10, 32)
+		if err == nil {
+			gotie.IOCLimit = int(s)
+		} else {
+			log.Fatal(err)
+		}
 		if gotie.Debug {
 			log.Println(buildArgs(options.IOCS, "iocs"))
 		}
@@ -190,6 +202,13 @@ func main() {
 	}
 
 	if options.Verbs == "feed" {
+		var s int64
+		s, err = strconv.ParseInt(options.Feed.Limit, 10, 32)
+		if err == nil {
+			gotie.IOCLimit = int(s)
+		} else {
+			log.Fatal(err)
+		}
 		err = gotie.PrintPeriodFeeds(options.Feed.Period,
 			strings.ToLower(options.Feed.DataType),
 			buildArgs(options.IOCS, "iocs"), options.Feed.Format)

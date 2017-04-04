@@ -25,7 +25,7 @@ var (
 	// Debug turns on verbose output
 	Debug bool
 	// IOCLimit defines the maximum number of IOCs to query per request
-	IOCLimit = 10000
+	IOCLimit = 1000
 	// AuthToken can be generated in the TIE webinterface and is used for authentication
 	AuthToken string
 
