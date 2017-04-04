@@ -1,4 +1,4 @@
-GOTIE
+GOTIE [![Build Status](https://travis-ci.org/DCSO/gotie.svg?branch=master)](https://travis-ci.org/DCSO/gotie)
 =====
 
 Go bindings and simple command line client for the
