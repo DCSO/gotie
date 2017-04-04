@@ -19,7 +19,7 @@ import (
 )
 
 type IOCSParams struct {
-	Query            string `goptions:"-q,--query, description='Query string (case insensitive)', obligatory"`
+	Query            string `goptions:"-q,--query, description='Query string (case insensitive)'"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
