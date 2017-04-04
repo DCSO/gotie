@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -45,7 +46,7 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 		uri := baseuri + "&offset=" + strconv.Itoa(offset)
 
 		if Debug {
-			fmt.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
+			log.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
 		}
 
 		req, err := http.NewRequest("GET", uri, nil)
@@ -66,7 +67,7 @@ func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
 
 		if Debug {
 			dump, _ := httputil.DumpResponse(resp, true)
-			fmt.Println(string(dump))
+			log.Println(string(dump))
 		}
 
 		if resp.StatusCode != 200 {
@@ -215,7 +216,7 @@ func WriteIOCs(query string, dataType string, extraArgs string, outputFormat str
 			extraArgs
 
 		if Debug {
-			fmt.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
+			log.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
 		}
 
 		req, err := http.NewRequest("GET", uri, nil)
@@ -305,10 +306,10 @@ func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outp
 	defer resp.Body.Close()
 
 	if Debug {
-		fmt.Println("Tried URL:" + apiURL + "iocs/feed/" + feedPeriod + "/" + dataType)
+		log.Println("Tried URL:" + apiURL + "iocs/feed/" + feedPeriod + "/" + dataType)
 		dump, _ := httputil.DumpResponse(resp, true)
-		fmt.Println(string(dump))
-		fmt.Println("Requested outputFormat:", outputFormat)
+		log.Println(string(dump))
+		log.Println("Requested outputFormat:", outputFormat)
 	}
 
 	if resp.StatusCode != 200 {
@@ -363,8 +364,8 @@ func PingBackCall(dataType string, value string, token string) error {
 	defer resp.Body.Close()
 
 	if Debug {
-		fmt.Println("Tried URL:" + apiURL + "submit")
-		fmt.Println("Requested body data:", form.Encode())
+		log.Println("Tried URL:" + apiURL + "submit")
+		log.Println("Requested body data:", form.Encode())
 	}
 
 	dump, err := httputil.DumpResponse(resp, true)

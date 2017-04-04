@@ -90,7 +90,7 @@ func parseTime(timeString string) (time.Time, error) {
 	return mtime, err
 }
 
-func buildArgs(params Params, typestr string) string {
+func buildArgs(params Params, typestr string, debug bool) string {
 	sharedParams := map[string]bool{
 		"Severity":         true,
 		"Confidence":       true,
@@ -132,7 +132,9 @@ func buildArgs(params Params, typestr string) string {
 			argPair := url.QueryEscape(strings.ToLower(field_name)) + "=" + url.QueryEscape(outval)
 			values = append(values, argPair)
 		} else {
-			log.Printf("unknown or empty parameter %s skipped\n", field_name)
+			if debug {
+				log.Printf("unknown or empty parameter %s skipped\n", field_name)
+			}
 		}
 	}
 	return strings.Join(values, "&")
@@ -192,10 +194,10 @@ func main() {
 			log.Fatal(err)
 		}
 		if gotie.Debug {
-			log.Println(buildArgs(options.IOCS, "iocs"))
+			log.Println(buildArgs(options.IOCS, "iocs", options.Debug))
 		}
 		err = gotie.PrintIOCs(options.IOCS.Query, options.IOCS.DataType,
-			buildArgs(options.IOCS, "iocs"), options.IOCS.Format)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -211,7 +213,7 @@ func main() {
 		}
 		err = gotie.PrintPeriodFeeds(options.Feed.Period,
 			strings.ToLower(options.Feed.DataType),
-			buildArgs(options.IOCS, "iocs"), options.Feed.Format)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.Feed.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
