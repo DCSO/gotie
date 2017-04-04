@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,12 +19,13 @@ import (
 )
 
 type IOCSParams struct {
-	Query            string `goptions:"-q,--query, description='Query string (case insensitive)', obligatory"`
+	Query            string `goptions:"-q,--query, description='Query string (case insensitive)'"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Limit            string `goptions:"--limit, description='Specify limit of IOCs to query at once'"`
 	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
 	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
 	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
@@ -41,6 +43,7 @@ type FeedParams struct {
 	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
+	Limit            string `goptions:"--limit, description='Specify limit of IOCs to query at once'"`
 	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
 	Updated_until    string `goptions:"--updated-until, description='Limit to IOCs updated until the given date'"`
 	Created_since    string `goptions:"--created-since, description='Limit to IOCs created since the given date'"`
@@ -87,7 +90,7 @@ func parseTime(timeString string) (time.Time, error) {
 	return mtime, err
 }
 
-func buildArgs(params Params, typestr string) string {
+func buildArgs(params Params, typestr string, debug bool) string {
 	sharedParams := map[string]bool{
 		"Severity":         true,
 		"Confidence":       true,
@@ -129,7 +132,9 @@ func buildArgs(params Params, typestr string) string {
 			argPair := url.QueryEscape(strings.ToLower(field_name)) + "=" + url.QueryEscape(outval)
 			values = append(values, argPair)
 		} else {
-			log.Printf("unknown or empty parameter %s skipped\n", field_name)
+			if debug {
+				log.Printf("unknown or empty parameter %s skipped\n", field_name)
+			}
 		}
 	}
 	return strings.Join(values, "&")
@@ -153,9 +158,11 @@ func main() {
 		IOCS: IOCSParams{
 			Format:           "csv",
 			First_seen_since: "2015-01-01",
+			Limit:            "1000",
 		},
 		Feed: FeedParams{
 			Format: "csv",
+			Limit:  "1000",
 		},
 	}
 	goptions.ParseAndFail(&options)
@@ -179,20 +186,34 @@ func main() {
 	gotie.AuthToken = CONF.TieToken
 
 	if options.Verbs == "iocs" {
+		var s int64
+		s, err = strconv.ParseInt(options.IOCS.Limit, 10, 32)
+		if err == nil {
+			gotie.IOCLimit = int(s)
+		} else {
+			log.Fatal(err)
+		}
 		if gotie.Debug {
-			log.Println(buildArgs(options.IOCS, "iocs"))
+			log.Println(buildArgs(options.IOCS, "iocs", options.Debug))
 		}
 		err = gotie.PrintIOCs(options.IOCS.Query, options.IOCS.DataType,
-			buildArgs(options.IOCS, "iocs"), options.IOCS.Format)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	if options.Verbs == "feed" {
+		var s int64
+		s, err = strconv.ParseInt(options.Feed.Limit, 10, 32)
+		if err == nil {
+			gotie.IOCLimit = int(s)
+		} else {
+			log.Fatal(err)
+		}
 		err = gotie.PrintPeriodFeeds(options.Feed.Period,
 			strings.ToLower(options.Feed.DataType),
-			buildArgs(options.IOCS, "iocs"), options.Feed.Format)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.Feed.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
