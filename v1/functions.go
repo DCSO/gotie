@@ -22,6 +22,12 @@ import (
 	"github.com/tent/http-link-go"
 )
 
+const (
+	MAX_RETRIES                = 3
+	WAIT_FAIL_DURATION_SECONDS = 5
+	WAIT_DURATION_MILLISECONDS = 100
+)
+
 var (
 	// Debug turns on verbose output
 	Debug bool
@@ -187,7 +193,6 @@ func WriteIOCs(query string, dataType string, extraArgs string, outputFormat str
 	var uri string
 	var acceptHdr string
 	var offset int
-	var msg apiMessage
 	var agg PageContentAggregator
 
 	switch outputFormat {
@@ -219,41 +224,24 @@ func WriteIOCs(query string, dataType string, extraArgs string, outputFormat str
 			log.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
 		}
 
-		req, err := http.NewRequest("GET", uri, nil)
+		body, fetchLink, err := fetchIOCs(uri, acceptHdr)
+		if err != nil {
+			return fmt.Errorf("fetch iocs: %v", err)
+		}
+
+		err = agg.AddPage(body)
 		if err != nil {
 			return err
 		}
-
-		req.Header.Add("Accept", acceptHdr)
-		req.Header.Add("Authorization", "Bearer "+AuthToken)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != 200 {
-			err = json.NewDecoder(resp.Body).Decode(&msg)
-			if err != nil {
-				return err
-			}
-			errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
-			return errors.New(errStr)
-		}
-
-		err = agg.AddPage(resp.Body)
-		if err != nil {
-			return err
-		}
+		body.Close()
 
 		// Due to the various output types we can not marshal and check the HasMore
 		// header here. Fortunately TIE also returns a Link header for pagination.
 		// Ref: https://tie.dcso.de/api-docs/api/v1/pagination.html
 		var links []link.Link
 		found_next := false
-		if resp.Header.Get("Link") != "" {
-			links, err = link.Parse(resp.Header.Get("Link"))
+		if fetchLink != "" {
+			links, err = link.Parse(fetchLink)
 			if err != nil {
 				return err
 			}
@@ -272,6 +260,57 @@ func WriteIOCs(query string, dataType string, extraArgs string, outputFormat str
 
 	agg.Finish(dest)
 	return nil
+}
+
+// fetchIOCs using mustFetchIOCs, retry on Server Errors (>= 500).
+func fetchIOCs(uri, acceptHdr string) (body io.ReadCloser, link string, err error) {
+	var code int
+	var waitFail time.Duration = WAIT_FAIL_DURATION_SECONDS * time.Second
+
+	<-time.After(WAIT_DURATION_MILLISECONDS * time.Millisecond)
+
+	for i := 0; i < MAX_RETRIES; i++ {
+		body, code, link, err = mustFetchIOCs(uri, acceptHdr)
+		if code >= 500 {
+			log.Printf("Status code %v: retrying in %v...", code, waitFail)
+			<-time.After(waitFail)
+			waitFail *= 2
+			if body != nil {
+				body.Close()
+			}
+		} else {
+			break
+		}
+	}
+
+	return
+}
+
+func mustFetchIOCs(uri, acceptHdr string) (body io.ReadCloser, code int, link string, err error) {
+	var msg apiMessage
+
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return
+	}
+
+	req.Header.Add("Accept", acceptHdr)
+	req.Header.Add("Authorization", "Bearer "+AuthToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	if code = resp.StatusCode; code != 200 {
+		err = json.NewDecoder(resp.Body).Decode(&msg)
+		if err != nil {
+			return
+		}
+		return nil, code, "", fmt.Errorf("TIE returned an error: %v %v", msg.Message, msg.Errors)
+	}
+
+	return resp.Body, 200, resp.Header.Get("Link"), nil
 }
 
 func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string, dest io.Writer) error {
