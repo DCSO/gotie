@@ -1,5 +1,16 @@
 # Change Log
 
+## v0.1.2 (2017-05-29)
+
+**Implemented enhancements**
+
+- Added more configurable options in command line client.
+- Make TIE web service communication more robust by dynamically retrying failing requests.
+
+**Bugs fixed**
+
+- IOCQuery would sometimes return incorrect data due to returning references to temporary storage. Fixed by adjusting the code (bde99df)
+
 ## v0.1.1 (2017-01-30)
 
 **Implemented enhancements**
