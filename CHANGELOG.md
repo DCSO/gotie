@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.3 (2017-06-27)
+
+**Implemented enhancements**
+
+- Added Linux and Windows binary release builds (amd64)
+
 ## v0.1.2 (2017-05-29)
 
 **Implemented enhancements**
