@@ -21,4 +21,8 @@ bench: install
 clean:
 	@go clean $(GOFLAGS) -i ./...
 
+release:
+	@go get $(GOFLAGS) ./...
+	@go build -v -o gotie_linux_amd64.bin cmd/gotie/*
+	GOOS=windows GOARCH=amd64 go build -v -o gotie_windows_amd64.exe cmd/gotie/*
 ## EOF
