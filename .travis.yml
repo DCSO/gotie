@@ -6,11 +6,15 @@ env:
   global:
     secure: 7dvRrIrpeuwMi0YJ4aR1cn5K9mpwufNkqAhSFot9jbwGGEU0P5vOMZrr7k6upeLndtmXptXIU9s9T9nJ+Z7+rV6V96/FFUVpR+y8RkZmr7MfvvUKORHZ+R92P3QyYqZg73pCxpxpRU97mf2cVbxErXdHiLV5jTtb1rVCz8DEaJdLTdznpCjpBp8Y3DPN9L9pJKug0dMlV9qalcQDU2+Ehq1/OVG/07+t4DSAvftiTdwiEdN3XGLRhmTwlswR0fQ7pJ42YbhgwYNtWOzGnEMxsz0bbRmx7dUgOzkcJ6E6MGOMkOE/+tQ2mesu5iHn5n63k+Ls9Emw//ZjEGPzar8g0lJs/PX4hpRyIwsigiKHOHGTJZNf1pAHSNRE9bnFUuhEfRBgE6/i8+OT/HpdjwyqPByPzvaq5JXAXJIg2ILzrhQHGy7/S+PHDosN64TQr1aieqHElKVrbLX1GjyRVTUmbBLH6NdJiwoMKlG5JynFXZpT4452JgbgO6upxSSOPAvdzep3hYuKkMWdM90BUeTNU76ztPOKQXPSxbS2PswN926qftAAl+K36VoFFB+VbfmunFeSgqw4VyMgBpEM1+WDUvpX5xoqndsboVBhEa0+brh9UKIt7z+rmhV8vEQjHxzTcmwwPXWj+jZ3/cDxkMM1dbmdXNCAxTSZ0JWMry6Nyn4=
 install:
-- go build -v -o gotie_linux_amd64.bin  cmd/gotie/*
+- go get -v ./...
+- go build -v -o gotie_linux_amd64.bin cmd/gotie/*
+- GOOS=windows GOARCH=amd64 go build -v -o gotie_windows_amd64.exe cmd/gotie/*
 deploy:
   provider: releases
   api_key:
     secure: VJ6nc8CAv6aN+PdMt2LKgwoflkbBNRrz6W8yGI3Tu2EyzNFrPvaZMZGXK35wrJ4LGR7a6h/vKRV0h9+7Z372fiJcB8mK7iopJkTlB0APxUqR9PyTSQjLEgIHljnLtHckYhNFk4vmnCQjipM4WhMmqZoNF+RrhaCRyA4pIvF6lN/WM28ms9WUphRMiuFzhgzaimRMqCCWekh8x/FniFYY+DGjyVJmO4sOGqv8GaLyLXJEoKKkNxse6i2pZddrBySHw3nkYfiSgE7d1gLe7OEnIKZo+KmKJgM61hUdYBJKos7LD4jGkjFHDbelXwrU0UiAt4uy6YOQeOXahGuYPHPDwYrtBL+SnFryymx3oebVsoP5xk9Ks9LwOms18atylwwER9r6IqDPARnllT6D6f6oIT4GoR9tWWWtRKuge2fNJJqAhNfWDPEp7cZIuvXanBBQqfJwDnhsxSNRgv+OeeoF0WPNA72K1/xY9Wh56VBiUv54lbdv/0gqvnaxPfPp7XzZnGmv9HL3lO03HMNeOs1v8KdR1TAvlMZ4vYxxEcfgQYARtjTcVohZMxjPD8a6wu6lcFphQXu48vA8kzttgUgHjGWrbEjR02R4wgbqVL6ThhdOAlt/JkR5/hWcr05/8qJk1TMa1OANEYwY4ABxWHkk+y44PBwum8DKbMH48udU3e8=
-  file: gotie_linux_amd64.bin
+  file:
+  - gotie_linux_amd64.bin
+  - gotie_windows_amd64.exe
   on:
     repo: DCSO/gotie
