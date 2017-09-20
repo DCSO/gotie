@@ -20,7 +20,8 @@ import (
 
 type IOCSParams struct {
 	Query            string `goptions:"-q,--query, description='Query string (case insensitive)'"`
-	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	Format           string `goptions:"-f,--format, description='Specify output format (bloom|csv|json|stix)'"`
+	BloomP           string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
@@ -157,6 +158,7 @@ func main() {
 		ConfPath: getDefaultConfPath(),
 		IOCS: IOCSParams{
 			Format:           "csv",
+			BloomP:           "0.001",
 			First_seen_since: "2015-01-01",
 			Limit:            "1000",
 		},
@@ -196,8 +198,15 @@ func main() {
 		if gotie.Debug {
 			log.Println(buildArgs(options.IOCS, "iocs", options.Debug))
 		}
+
+		bloomP, err := strconv.ParseFloat(options.IOCS.BloomP, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		err = gotie.PrintIOCs(options.IOCS.Query, options.IOCS.DataType,
-			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format,
+			bloomP)
 		if err != nil {
 			log.Fatal(err)
 		}

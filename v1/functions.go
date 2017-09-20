@@ -189,13 +189,16 @@ func GetIOCPeriodFeeds(feedPeriod string, dataType string, extraArgs string) (*I
 	return IOCChanCollect(GetIOCPeriodFeedChan(feedPeriod, dataType, extraArgs))
 }
 
-func WriteIOCs(query string, dataType string, extraArgs string, outputFormat string, dest io.Writer) error {
+func WriteIOCs(query, dataType, extraArgs, outputFormat string, bloomP float64, dest io.Writer) error {
 	var uri string
 	var acceptHdr string
 	var offset int
 	var agg PageContentAggregator
 
 	switch outputFormat {
+	case "bloom":
+		acceptHdr = "application/json"
+		agg = NewBloomPageAggregator(bloomP)
 	case "csv":
 		acceptHdr = "text/csv"
 		agg = &PaginatedRawPageAggregator{}
@@ -370,8 +373,8 @@ func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outp
 
 // PrintIOCs allows queries for TIE IOC objects with "query" being a case
 // insensitive string to search for. The results are printed to stdout.
-func PrintIOCs(query string, dataType string, extraArgs string, outputFormat string) error {
-	return WriteIOCs(query, dataType, extraArgs, outputFormat, os.Stdout)
+func PrintIOCs(query, dataType, extraArgs, outputFormat string, bloomP float64) error {
+	return WriteIOCs(query, dataType, extraArgs, outputFormat, bloomP, os.Stdout)
 }
 
 // PrintPeriodFeeds gets file based feeds for the given period and IOC data type.
