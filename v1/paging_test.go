@@ -66,6 +66,10 @@ func TestBloomPageAggregator(t *testing.T) {
 		}
 	}
 
+	if filter.Check([]byte("www.bing.de")) && filter.Check([]byte("www.bing.com")) {
+		t.Fatalf("More than 0.1%% false-positives")
+	}
+
 	if n != 0 {
 		t.Errorf("expected no negatives but got %v", n)
 	}
