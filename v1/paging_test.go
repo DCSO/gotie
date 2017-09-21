@@ -1,7 +1,6 @@
 package gotie
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -15,19 +14,13 @@ func TestBloomPageAggregator(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	defer os.Remove(iocsBuf.Name())
-	bloomBuf, err := ioutil.TempFile("", "gotie-bloom")
+	bloomBuf, err := ioutil.TempFile("", "gotie-iocs")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	defer os.Remove(bloomBuf.Name())
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", iocsBuf)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	tmp := bytes.NewBufferString("")
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "bloom", tmp)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", 0, iocsBuf)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -36,8 +29,8 @@ func TestBloomPageAggregator(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	agg := BloomPageAggregator{}
-	agg.AddPage(tmp)
+	agg := NewBloomPageAggregator(0.01)
+	agg.AddPage(iocsBuf)
 	agg.Finish(bloomBuf)
 
 	if _, err = iocsBuf.Seek(0, 0); err != nil {
@@ -56,9 +49,6 @@ func TestBloomPageAggregator(t *testing.T) {
 		t.Logf("ERROR: JSON input channel yielded no results")
 		t.FailNow()
 	}
-	if len(res.Iocs) > 1000 {
-		t.Fatalf("Expected not more than 1000 iocs (false-positive checking below)")
-	}
 
 	if _, err = bloomBuf.Seek(0, 0); err != nil {
 		t.Fatalf(err.Error())
@@ -74,10 +64,6 @@ func TestBloomPageAggregator(t *testing.T) {
 		if !filter.Check([]byte(ioc.Value)) {
 			n++
 		}
-	}
-
-	if filter.Check([]byte("www.bing.de")) && filter.Check([]byte("www.bing.com")) {
-		t.Fatalf("More than 0.1% false-positives")
 	}
 
 	if n != 0 {

@@ -68,19 +68,19 @@ func TestGetIocs(t *testing.T) {
 		}
 	}
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "csv", ioutil.Discard)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "csv", 0, ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", ioutil.Discard)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", 0, ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
 	}
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "stix", ioutil.Discard)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "stix", 0, ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
@@ -105,7 +105,7 @@ func TestWriteIocs(t *testing.T) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", tmpfile)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", 0, tmpfile)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()
@@ -134,7 +134,7 @@ func TestReadWriteIocsJSON(t *testing.T) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", tmpfile)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", 0, tmpfile)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()

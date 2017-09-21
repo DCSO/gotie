@@ -6,7 +6,6 @@ package gotie
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 
@@ -80,41 +79,55 @@ func (pa *JSONPageAggregator) Reset() {
 }
 
 type BloomPageAggregator struct {
-	f *bloom.BloomFilter
+	p      float64
+	values []string
 }
 
-func (ba *BloomPageAggregator) AddPage(reader io.Reader) (err error) {
-	f, err := bloom.LoadFromReader(reader, false)
-	if err != nil {
-		return fmt.Errorf("load bloom from reader: %v", err)
+func NewBloomPageAggregator(p float64) (ba *BloomPageAggregator) {
+	ba = &BloomPageAggregator{
+		p: p,
 	}
-
-	if ba.f == nil {
-		ba.f = f
-		return
-	}
-
-	if err = ba.f.Join(f); err != nil {
-		return fmt.Errorf("join filters: %v", err)
-	}
+	ba.initialize()
 
 	return
 }
 
-func (ba *BloomPageAggregator) Finish(writer io.Writer) error {
-	if ba.f == nil {
-		if Debug {
-			log.Printf("Writing empty bloom filter")
-		}
-		empty := bloom.Initialize(0, 0.01)
-		ba.f = &empty
+func (ba *BloomPageAggregator) initialize() {
+	ba.values = make([]string, 0, 1e6)
+}
+
+func (ba *BloomPageAggregator) AddPage(reader io.Reader) (err error) {
+	var tlr JSONTopLevelResponse
+
+	err = json.NewDecoder(reader).Decode(&tlr)
+	if err != nil {
+		return err
 	}
 
-	return ba.f.Write(writer)
+	for _, ioc := range tlr.IOCs {
+		ba.values = append(ba.values, ioc.Value)
+	}
+
+	return nil
+}
+
+func (ba *BloomPageAggregator) Finish(writer io.Writer) error {
+	n := uint32(len(ba.values))
+
+	log.Printf("Writing bloom filter with n = %v, p = %v", n, ba.p)
+
+	f := bloom.Initialize(n, ba.p)
+
+	for _, v := range ba.values {
+		// Assuming UTF8 encoding
+		f.Add([]byte(v))
+	}
+
+	return f.Write(writer)
 }
 
 func (ba *BloomPageAggregator) Reset() {
-	ba.f = nil
+	ba.initialize()
 }
 
 // to be implemented
