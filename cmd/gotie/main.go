@@ -21,7 +21,7 @@ import (
 type IOCSParams struct {
 	Query            string `goptions:"-q,--query, description='Query string (case insensitive)'"`
 	Format           string `goptions:"-f,--format, description='Specify output format (bloom|csv|json|stix)'"`
-	BloomP           string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
+	P                string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
@@ -40,6 +40,7 @@ type IOCSParams struct {
 type FeedParams struct {
 	Period           string `goptions:"-p,--period, description='Get TIE feed for given period (hourly|daily|weekly|monthly)', obligatory"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	P                string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
@@ -93,6 +94,7 @@ func parseTime(timeString string) (time.Time, error) {
 
 func buildArgs(params Params, typestr string, debug bool) string {
 	sharedParams := map[string]bool{
+
 		"Severity":         true,
 		"Confidence":       true,
 		"Category":         true,
@@ -104,6 +106,7 @@ func buildArgs(params Params, typestr string, debug bool) string {
 		"First_seen_until": true,
 		"Last_seen_since":  true,
 		"Last_seen_until":  true,
+		"P":                true,
 	}
 	var p reflect.Value
 
@@ -158,12 +161,13 @@ func main() {
 		ConfPath: getDefaultConfPath(),
 		IOCS: IOCSParams{
 			Format:           "csv",
-			BloomP:           "0.001",
+			P:                "0.001",
 			First_seen_since: "2015-01-01",
 			Limit:            "1000",
 		},
 		Feed: FeedParams{
 			Format: "csv",
+			P:      "0.001",
 			Limit:  "1000",
 		},
 	}
@@ -199,14 +203,8 @@ func main() {
 			log.Println(buildArgs(options.IOCS, "iocs", options.Debug))
 		}
 
-		bloomP, err := strconv.ParseFloat(options.IOCS.BloomP, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		err = gotie.PrintIOCs(options.IOCS.Query, options.IOCS.DataType,
-			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format,
-			bloomP)
+			buildArgs(options.IOCS, "iocs", options.Debug), options.IOCS.Format)
 		if err != nil {
 			log.Fatal(err)
 		}
