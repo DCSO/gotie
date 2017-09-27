@@ -21,6 +21,7 @@ import (
 type IOCSParams struct {
 	Query            string `goptions:"-q,--query, description='Query string (case insensitive)'"`
 	Format           string `goptions:"-f,--format, description='Specify output format (bloom|csv|json|stix)'"`
+	N                string `goptions:"--bloom-n, description='Bloom output: capacity'"`
 	P                string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
@@ -40,6 +41,7 @@ type IOCSParams struct {
 type FeedParams struct {
 	Period           string `goptions:"-p,--period, description='Get TIE feed for given period (hourly|daily|weekly|monthly)', obligatory"`
 	Format           string `goptions:"-f,--format, description='Specify output format (csv|json|stix)'"`
+	N                string `goptions:"--bloom-n, description='Bloom output: capacity'"`
 	P                string `goptions:"--bloom-p, description='Bloom output: false positive rate'"`
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='Specify a valid TIE IOC data type', obligatory"`
@@ -106,6 +108,7 @@ func buildArgs(params Params, typestr string, debug bool) string {
 		"First_seen_until": true,
 		"Last_seen_since":  true,
 		"Last_seen_until":  true,
+		"N":                true,
 		"P":                true,
 	}
 	var p reflect.Value
@@ -161,12 +164,14 @@ func main() {
 		ConfPath: getDefaultConfPath(),
 		IOCS: IOCSParams{
 			Format:           "csv",
+			N:                "100000",
 			P:                "0.001",
 			First_seen_since: "2015-01-01",
 			Limit:            "1000",
 		},
 		Feed: FeedParams{
 			Format: "csv",
+			N:      "100000",
 			P:      "0.001",
 			Limit:  "1000",
 		},
