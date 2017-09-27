@@ -26,6 +26,7 @@ type IOCSParams struct {
 	Category         string `goptions:"-c,--category, description='specify comma-separated IOC categories'"`
 	DataType         string `goptions:"-t,--type, description='TIE IOC data type to search exclusively'"`
 	Severity         string `goptions:"--severity, description='Specify severity (can be a range)'"`
+	Source_pseudonym string `goptions:"--source, description='Specify source pseudonym'"`
 	Confidence       string `goptions:"--confidence, description='Specify confidence (can be a range)'"`
 	Limit            string `goptions:"--limit, description='Specify limit of IOCs to query at once'"`
 	Updated_since    string `goptions:"--updated-since, description='Limit to IOCs updated since the given date'"`
@@ -100,6 +101,7 @@ func buildArgs(params Params, typestr string, debug bool) string {
 		"Severity":         true,
 		"Confidence":       true,
 		"Category":         true,
+		"Source_pseudonym": true,
 		"Updated_since":    true,
 		"Updated_until":    true,
 		"Created_since":    true,
