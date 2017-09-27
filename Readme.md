@@ -59,9 +59,9 @@ Print only value field using jq:
 gotie iocs -f json --created-since $(date +%F) | jq '.iocs[] | .value'
 ```
 
-Build a Bloom filter:
+Build a Bloom filter with capacity of 2000 entries and a false-positive probability of 0.01%:
 ```bash
-gotie iocs -f bloom --created-since $(date +%F) > test.bloom
+gotie iocs -f bloom --bloom-p 0.0001 --bloom-n 2000 --created-since $(date +%F) > test.bloom
 ```
 
 Perform a check with the bloom CLI tool:
