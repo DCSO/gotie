@@ -45,7 +45,7 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
-	feedchan := GetIOCPeriodFeedChan("daily", "DomainName", "")
+	feedchan := GetIOCPeriodFeedChan("hourly", "DomainName", "")
 	if feedchan == nil {
 		t.Logf("ERROR: no channel created")
 		t.FailNow()
@@ -86,7 +86,7 @@ func TestGetIocs(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = WritePeriodFeeds("daily", "DomainName", "", "csv", ioutil.Discard)
+	err = WritePeriodFeeds("hourly", "DomainName", "", "csv", ioutil.Discard)
 	if err != nil {
 		t.Logf("ERROR: %v", err)
 		t.FailNow()

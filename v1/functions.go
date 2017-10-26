@@ -7,7 +7,6 @@ package gotie
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -15,11 +14,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
-
-	"github.com/tent/http-link-go"
 )
 
 const (
@@ -41,104 +37,32 @@ var (
 	client      = http.Client{}
 )
 
-func IOCQuery(baseuri string, outchan chan IOCResult, data IOCQueryStruct) {
-	var outData IOCQueryStruct
-	var msg apiMessage
-	var offset int
-	// The TIE API uses a paging mechanism to return all matched IOCs.
-	// So we have to loop until the API tells us to stop.
-	for data.HasMore == true {
-
-		uri := baseuri + "&offset=" + strconv.Itoa(offset)
-
-		if Debug {
-			log.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
-		}
-
-		req, err := http.NewRequest("GET", uri, nil)
-		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: err}
-			break
-		}
-		req.Header.Add("Accept", "application/json")
-		req.Header.Add("Authorization", "Bearer "+AuthToken)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: err}
-			close(outchan)
-			return
-		}
-		defer resp.Body.Close()
-
-		if Debug {
-			dump, _ := httputil.DumpResponse(resp, true)
-			log.Println(string(dump))
-		}
-
-		if resp.StatusCode != 200 {
-			err = json.NewDecoder(resp.Body).Decode(&msg)
-			if err != nil {
-				outchan <- IOCResult{IOC: nil, Error: err}
-				close(outchan)
-				return
-			}
-			errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
-			this_err := errors.New(errStr)
-			outchan <- IOCResult{IOC: nil, Error: this_err}
-			close(outchan)
-			return
-		}
-
-		err = json.NewDecoder(resp.Body).Decode(&data)
-		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: err}
-			close(outchan)
-			return
-		}
-		_, err = json.Marshal(data.Iocs)
-		if err != nil {
-			outchan <- IOCResult{IOC: nil, Error: err}
-			close(outchan)
-			return
-		}
-		for i := range data.Iocs {
-			outchan <- IOCResult{IOC: &data.Iocs[i], Error: nil}
-		}
-		outData.Params = data.Params
-		outData.HasMore = data.HasMore
-		offset += IOCLimit
-	}
-	close(outchan)
-}
-
 func GetIOCChan(query string, dataType string, extraArgs string) <-chan IOCResult {
-	data := IOCQueryStruct{HasMore: true}
 	outchan := make(chan IOCResult)
 
-	uri := apiURL +
-		"iocs?data_type=" + strings.ToLower(dataType) +
-		"&ivalue=" + query +
-		"&limit=" + strconv.Itoa(IOCLimit) +
-		"&date_format=rfc3339" +
-		extraArgs
+	request := &IOCRequest{
+		Query:     query,
+		DataType:  dataType,
+		ExtraArgs: extraArgs,
+		MimeType:  JSON,
+	}
 
-	go IOCQuery(uri, outchan, data)
+	go DoCh(request, JSON, outchan)
 
 	return outchan
 }
 
 func GetIOCPeriodFeedChan(feedPeriod string, dataType string, extraArgs string) <-chan IOCResult {
-	data := IOCQueryStruct{HasMore: true}
 	outchan := make(chan IOCResult)
 
-	uri := apiURL +
-		"iocs/feed/" + feedPeriod + "?data_type=" + strings.ToLower(dataType) +
-		"&limit=" + strconv.Itoa(IOCLimit) +
-		"&date_format=rfc3339" +
-		extraArgs
+	request := &FeedRequest{
+		FeedPeriod: feedPeriod,
+		DataType:   dataType,
+		ExtraArgs:  extraArgs,
+		MimeType:   JSON,
+	}
 
-	go IOCQuery(uri, outchan, data)
+	go DoCh(request, JSON, outchan)
 
 	return outchan
 }
@@ -166,7 +90,6 @@ func GetIOCJSONInChan(reader io.Reader) (<-chan IOCResult, error) {
 
 func IOCChanCollect(inchan <-chan IOCResult) (*IOCQueryStruct, error) {
 	var outData IOCQueryStruct
-
 	for ioc := range inchan {
 		if ioc.Error != nil {
 			return &outData, ioc.Error
@@ -186,189 +109,40 @@ func GetIOCs(query string, dataType string, extraArgs string) (*IOCQueryStruct, 
 // GetIOCPeriodFeeds gets file based feeds for the given period and IOC data type.
 // Feed types are, for example, 'hourly', 'daily', 'weekly' or 'monthly'.
 func GetIOCPeriodFeeds(feedPeriod string, dataType string, extraArgs string) (*IOCQueryStruct, error) {
-	return IOCChanCollect(GetIOCPeriodFeedChan(feedPeriod, dataType, extraArgs))
+	tmp := GetIOCPeriodFeedChan(feedPeriod, dataType, extraArgs)
+	return IOCChanCollect(tmp)
 }
 
-func WriteIOCs(query, dataType, extraArgs, outputFormat string, dest io.Writer) error {
-	var uri string
-	var acceptHdr string
-	var offset int
-	var agg PageContentAggregator
-
-	switch outputFormat {
-	case "bloom":
-		acceptHdr = "application/bloom"
-		agg = &BloomPageAggregator{}
-	case "csv":
-		acceptHdr = "text/csv"
-		agg = &PaginatedRawPageAggregator{}
-	case "json":
-		acceptHdr = "application/json"
-		agg = &JSONPageAggregator{}
-	case "stix":
-		acceptHdr = "text/xml"
-		agg = &PaginatedRawPageAggregator{}
-	default:
-		return errors.New("Unsupported output format requested: " + outputFormat)
-	}
-
-	// The TIE API uses a paging mechanism to return all matched IOCs. So we have
-	//  to loop until the API tells us to stop.
-	for {
-		uri = apiURL +
-			"iocs?data_type=" + strings.ToLower(dataType) +
-			"&ivalue=" + query +
-			"&limit=" + strconv.Itoa(IOCLimit) +
-			"&offset=" + strconv.Itoa(offset) +
-			"&date_format=rfc3339" +
-			extraArgs
-
-		if Debug {
-			log.Println("Asking API for more IOCs at offset", strconv.Itoa(offset), uri)
-		}
-
-		body, fetchLink, err := fetchIOCs(uri, acceptHdr)
-		if err != nil {
-			return fmt.Errorf("fetch iocs: %v", err)
-		}
-
-		err = agg.AddPage(body)
-		if err != nil {
-			return err
-		}
-		body.Close()
-
-		// Due to the various output types we can not marshal and check the HasMore
-		// header here. Fortunately TIE also returns a Link header for pagination.
-		// Ref: https://tie.dcso.de/api-docs/api/v1/pagination.html
-		var links []link.Link
-		found_next := false
-		if fetchLink != "" {
-			links, err = link.Parse(fetchLink)
-			if err != nil {
-				return err
-			}
-			for _, l := range links {
-				if l.Rel == "next" {
-					found_next = true
-				}
-			}
-		}
-		if !found_next {
-			break
-		}
-
-		offset += IOCLimit
-	}
-
-	agg.Finish(dest)
-	return nil
-}
-
-// fetchIOCs using mustFetchIOCs, retry on Server Errors (>= 500).
-func fetchIOCs(uri, acceptHdr string) (body io.ReadCloser, link string, err error) {
-	var code int
-	var waitFail time.Duration = WAIT_FAIL_DURATION_SECONDS * time.Second
-
-	<-time.After(WAIT_DURATION_MILLISECONDS * time.Millisecond)
-
-	for i := 0; i < MAX_RETRIES; i++ {
-		body, code, link, err = mustFetchIOCs(uri, acceptHdr)
-		if code >= 500 {
-			log.Printf("Status code %v: retrying in %v...", code, waitFail)
-			<-time.After(waitFail)
-			waitFail *= 2
-			if body != nil {
-				body.Close()
-			}
-		} else {
-			break
-		}
-	}
-
-	return
-}
-
-func mustFetchIOCs(uri, acceptHdr string) (body io.ReadCloser, code int, link string, err error) {
-	var msg apiMessage
-
-	req, err := http.NewRequest("GET", uri, nil)
+func WriteIOCs(query, dataType, extraArgs, outputFormat string, dest io.Writer) (err error) {
+	t, err := NewMimeType(outputFormat)
 	if err != nil {
 		return
 	}
 
-	req.Header.Add("Accept", acceptHdr)
-	req.Header.Add("Authorization", "Bearer "+AuthToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return
+	request := &IOCRequest{
+		Query:     query,
+		DataType:  dataType,
+		ExtraArgs: extraArgs,
+		MimeType:  t,
 	}
 
-	if code = resp.StatusCode; code != 200 {
-		err = json.NewDecoder(resp.Body).Decode(&msg)
-		if err != nil {
-			return
-		}
-		return nil, code, "", fmt.Errorf("TIE returned an error: %v %v", msg.Message, msg.Errors)
-	}
-
-	return resp.Body, 200, resp.Header.Get("Link"), nil
+	return Do(request, request.MimeType, dest)
 }
 
 func WritePeriodFeeds(feedPeriod string, dataType string, extraArgs string, outputFormat string, dest io.Writer) error {
-	var msg apiMessage
-
-	req, err := http.NewRequest("GET",
-		apiURL+"iocs/feed/"+feedPeriod+"/"+strings.ToLower(dataType)+
-			"?limit="+strconv.Itoa(IOCLimit)+
-			"&date_format=rfc3339"+
-			extraArgs,
-		nil)
+	t, err := NewMimeType(outputFormat)
 	if err != nil {
 		return err
 	}
 
-	switch outputFormat {
-	case "csv":
-		req.Header.Add("Accept", "text/csv")
-	case "json":
-		req.Header.Add("Accept", "application/json")
-	case "stix":
-		req.Header.Add("Accept", "text/xml")
-	default:
-		return errors.New("Unsupported output format requested: " + outputFormat)
+	request := &FeedRequest{
+		FeedPeriod: feedPeriod,
+		DataType:   dataType,
+		ExtraArgs:  extraArgs,
+		MimeType:   t,
 	}
 
-	req.Header.Add("Authorization", "Bearer "+AuthToken)
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if Debug {
-		log.Println("Tried URL:" + apiURL + "iocs/feed/" + feedPeriod + "/" + dataType)
-		dump, _ := httputil.DumpResponse(resp, true)
-		log.Println(string(dump))
-		log.Println("Requested outputFormat:", outputFormat)
-	}
-
-	if resp.StatusCode != 200 {
-		err = json.NewDecoder(resp.Body).Decode(&msg)
-		if err != nil {
-			return err
-		}
-		errStr := fmt.Sprintf("TIE returned an error: %v %v", msg.Message, msg.Errors)
-		return errors.New(errStr)
-	}
-
-	_, err = io.Copy(dest, resp.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return Do(request, request.MimeType, dest)
 }
 
 // PrintIOCs allows queries for TIE IOC objects with "query" being a case
