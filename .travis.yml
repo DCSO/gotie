@@ -1,7 +1,10 @@
 language: go
 sudo: false
 before_script:
+- go get ./...
+- go get -u golang.org/x/lint/golint
 - go vet ./...
+- golint ./...
 env:
   global:
     secure: 7dvRrIrpeuwMi0YJ4aR1cn5K9mpwufNkqAhSFot9jbwGGEU0P5vOMZrr7k6upeLndtmXptXIU9s9T9nJ+Z7+rV6V96/FFUVpR+y8RkZmr7MfvvUKORHZ+R92P3QyYqZg73pCxpxpRU97mf2cVbxErXdHiLV5jTtb1rVCz8DEaJdLTdznpCjpBp8Y3DPN9L9pJKug0dMlV9qalcQDU2+Ehq1/OVG/07+t4DSAvftiTdwiEdN3XGLRhmTwlswR0fQ7pJ42YbhgwYNtWOzGnEMxsz0bbRmx7dUgOzkcJ6E6MGOMkOE/+tQ2mesu5iHn5n63k+Ls9Emw//ZjEGPzar8g0lJs/PX4hpRyIwsigiKHOHGTJZNf1pAHSNRE9bnFUuhEfRBgE6/i8+OT/HpdjwyqPByPzvaq5JXAXJIg2ILzrhQHGy7/S+PHDosN64TQr1aieqHElKVrbLX1GjyRVTUmbBLH6NdJiwoMKlG5JynFXZpT4452JgbgO6upxSSOPAvdzep3hYuKkMWdM90BUeTNU76ztPOKQXPSxbS2PswN926qftAAl+K36VoFFB+VbfmunFeSgqw4VyMgBpEM1+WDUvpX5xoqndsboVBhEa0+brh9UKIt7z+rmhV8vEQjHxzTcmwwPXWj+jZ3/cDxkMM1dbmdXNCAxTSZ0JWMry6Nyn4=
