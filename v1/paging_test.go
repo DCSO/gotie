@@ -1,5 +1,8 @@
 package gotie
 
+// DCSO gotie API bindings
+// Copyright (c) 2018, DCSO GmbH
+
 import (
 	"bytes"
 	"io/ioutil"

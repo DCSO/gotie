@@ -80,7 +80,7 @@ To run the included tests you have to set an environment variable containing
 your API token:
 
 ```bash
-$ TIE_TOKEN=<token> make test
+TIE_TOKEN=<token> make test
 ```
 
 ## License
@@ -88,4 +88,4 @@ $ TIE_TOKEN=<token> make test
 This software is released under a BSD 3-Clause license.
 Please have a look at the LICENSE file included in the repository.
 
-Copyright (c) 2016, DCSO Deutsche Cyber-Sicherheitsorganisation GmbH
+Copyright (c) 2016-2018, DCSO Deutsche Cyber-Sicherheitsorganisation GmbH

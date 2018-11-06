@@ -3,7 +3,7 @@
 package gotie
 
 // DCSO gotie API bindings
-// Copyright (c) 2016, DCSO GmbH
+// Copyright (c) 2016-2018, DCSO GmbH
 
 import (
 	"encoding/json"
@@ -33,7 +33,7 @@ var (
 	AuthToken string
 
 	apiURL      = "https://tie.dcso.de/api/v1/"
-	pingbackURL = "https://tie-fb.xyz/api/v1/"
+	pingbackURL = "https://tie.dcso.de/api/v1/submit/"
 	client      = http.Client{}
 )
 
@@ -79,7 +79,7 @@ func GetIOCJSONInChan(reader io.Reader) (<-chan IOCResult, error) {
 	}
 
 	go func() {
-		for i, _ := range iocs.IOCs {
+		for i := range iocs.IOCs {
 			outchan <- IOCResult{IOC: &iocs.IOCs[i], Error: nil}
 		}
 		close(outchan)
@@ -166,7 +166,7 @@ func PingBackCall(dataType string, value string, token string) error {
 	form.Add("value", value)
 	form.Add("seen", currentDate)
 
-	req, err := http.NewRequest("POST", pingbackURL+"submit", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", pingbackURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
