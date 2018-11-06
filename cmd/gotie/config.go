@@ -1,7 +1,7 @@
 package main
 
 // DCSO gotie API bindings
-// Copyright (c) 2016, DCSO GmbH
+// Copyright (c) 2016-2018, DCSO GmbH
 
 import (
 	"os/user"

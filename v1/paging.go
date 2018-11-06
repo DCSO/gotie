@@ -1,7 +1,7 @@
 package gotie
 
 // DCSO gotie API bindings
-// Copyright (c) 2017, DCSO GmbH
+// Copyright (c) 2017-2018, DCSO GmbH
 
 import (
 	"bytes"
