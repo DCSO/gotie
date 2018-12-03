@@ -63,6 +63,7 @@ Build a Bloom filter with capacity of 2000 entries and a false-positive probabil
 ```bash
 gotie iocs -f bloom --bloom-p 0.0001 --bloom-n 2000 --created-since $(date +%F) > test.bloom
 ```
+The default Bloom filter format (`bloom`) is TIE's 64-bit Bloom filter (v2). Gotie also supports the old Bloom filter format (v1) by specifying `bloomv1`.
 
 Perform a check with the bloom CLI tool:
 ```bash

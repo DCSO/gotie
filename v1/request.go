@@ -23,7 +23,9 @@ type MimeType string
 func NewMimeType(outputFormat string) (t MimeType, err error) {
 	switch outputFormat {
 	case "bloom":
-		return BLOOM, nil
+		return BLOOMv2, nil
+	case "bloomv1":
+		return BLOOMv1, nil
 	case "csv":
 		return CSV, nil
 	case "json":
@@ -37,7 +39,9 @@ func NewMimeType(outputFormat string) (t MimeType, err error) {
 
 func (t MimeType) Aggregator() PageContentAggregator {
 	switch t {
-	case BLOOM:
+	case BLOOMv1:
+		return &BloomPageAggregator{}
+	case BLOOMv2:
 		return &BloomPageAggregator{}
 	case CSV:
 		return &PaginatedRawPageAggregator{}
@@ -55,10 +59,11 @@ func (t MimeType) String() string {
 }
 
 const (
-	JSON  MimeType = "application/json"
-	CSV   MimeType = "text/csv"
-	BLOOM MimeType = "application/bloom"
-	STIX  MimeType = "text/xml"
+	JSON    MimeType = "application/json"
+	CSV     MimeType = "text/csv"
+	BLOOMv1 MimeType = "application/bloom"
+	BLOOMv2 MimeType = "application/bloom-v2"
+	STIX    MimeType = "text/xml"
 )
 
 type Request interface {
