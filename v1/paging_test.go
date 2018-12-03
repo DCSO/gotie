@@ -24,13 +24,13 @@ func TestBloomPageAggregator(t *testing.T) {
 	}
 	defer os.Remove(bloomBuf.Name())
 
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "json", iocsBuf)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2017-1-1", "json", iocsBuf)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
 	tmp := bytes.NewBufferString("")
-	err = WriteIOCs("google", "domainname", "&first_seen_since=2015-1-1", "bloom", tmp)
+	err = WriteIOCs("google", "domainname", "&first_seen_since=2017-1-1", "bloom", tmp)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
