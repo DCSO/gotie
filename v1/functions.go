@@ -32,8 +32,8 @@ var (
 	// AuthToken can be generated in the TIE webinterface and is used for authentication
 	AuthToken string
 
-	apiURL      = "https://tie.dcso.de/api/v1/"
-	pingbackURL = "https://tie.dcso.de/api/v1/submit/"
+	APIURL      = "https://tie.dcso.de/api/v1/"
+	PingbackURL = "https://tie.dcso.de/api/v1/submit/"
 	client      = http.Client{}
 )
 
@@ -166,7 +166,7 @@ func PingBackCall(dataType string, value string, token string) error {
 	form.Add("value", value)
 	form.Add("seen", currentDate)
 
-	req, err := http.NewRequest("POST", pingbackURL, strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", PingbackURL, strings.NewReader(form.Encode()))
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func PingBackCall(dataType string, value string, token string) error {
 	defer resp.Body.Close()
 
 	if Debug {
-		log.Println("Tried URL:" + apiURL + "submit")
+		log.Println("Tried URL:" + APIURL + "submit")
 		log.Println("Requested body data:", form.Encode())
 	}
 

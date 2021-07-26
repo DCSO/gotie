@@ -150,9 +150,11 @@ func buildArgs(params Params, typestr string, debug bool) string {
 }
 
 type Options struct {
-	ConfPath string        `goptions:"-c,--conf,description='Set non default config path'"`
-	Debug    bool          `goptions:"-d,--debug,description='Print debug messages'"`
-	Help     goptions.Help `goptions:"-h, --help, description='Show this help'"`
+	ConfPath    string        `goptions:"-c,--conf,description='Set non default config path'"`
+	TieAPI      string        `goptions:"--tie-api,description='TIE API endpoint'"`
+	PingbackAPI string        `goptions:"--tie-pingback-api,description='TIE Pingback API endpoint'"`
+	Debug       bool          `goptions:"-d,--debug,description='Print debug messages'"`
+	Help        goptions.Help `goptions:"-h, --help, description='Show this help'"`
 
 	goptions.Verbs
 	IOCS     IOCSParams     `goptions:"iocs"`
@@ -163,7 +165,9 @@ type Options struct {
 func main() {
 	var err error
 	options := Options{
-		ConfPath: getDefaultConfPath(),
+		ConfPath:    getDefaultConfPath(),
+		TieAPI:      "https://tie.dcso.de/api/v1/",
+		PingbackAPI: "https://tie.dcso.de/api/v1/submit",
 		IOCS: IOCSParams{
 			Format:           "csv",
 			N:                "100000",
@@ -197,6 +201,9 @@ func main() {
 		panic(err)
 	}
 	gotie.AuthToken = CONF.TieToken
+
+	gotie.APIURL = options.TieAPI
+	gotie.PingbackURL = options.PingbackAPI
 
 	if options.Verbs == "iocs" {
 		var s int64
