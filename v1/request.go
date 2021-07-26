@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tent/http-link-go"
+	link "github.com/tent/http-link-go"
 )
 
 type MimeType string
@@ -80,7 +80,7 @@ type FeedRequest struct {
 }
 
 func (r *FeedRequest) Url() string {
-	return apiURL + "iocs/feed/" + r.FeedPeriod + "/" + strings.ToLower(r.DataType) +
+	return APIURL + "iocs/feed/" + r.FeedPeriod + "/" + strings.ToLower(r.DataType) +
 		"?limit=" + strconv.Itoa(IOCLimit) +
 		"&date_format=rfc3339" +
 		r.ExtraArgs
@@ -96,7 +96,7 @@ type IOCRequest struct {
 }
 
 func (r *IOCRequest) Url() string {
-	return apiURL +
+	return APIURL +
 		"iocs?data_type=" + strings.ToLower(r.DataType) +
 		"&ivalue=" + r.Query +
 		"&limit=" + strconv.Itoa(IOCLimit) +
